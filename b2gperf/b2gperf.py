@@ -14,6 +14,7 @@ import traceback
 from urlparse import urlparse
 import xml.dom.minidom
 import zipfile
+import numpy
 
 from progressbar import Counter
 from progressbar import ProgressBar
@@ -28,6 +29,12 @@ from wait import MarionetteWait
 
 TEST_TYPES = ['startup', 'scrollfps']
 
+def reject_outliers(data):
+    u = numpy.mean(data)
+    s = numpy.std(data)
+    m = 1
+    filtered = [e for e in data if (u - m * s < e < u + m * s)]
+    return filtered
 
 class DatazillaPerfPoster(object):
 
@@ -222,7 +229,26 @@ class B2GPerfRunner(DatazillaPerfPoster):
                 if self.submit_report:
                     self.post_to_datazilla(results, app_name)
                 else:
-                    print 'Results: %s' % results
+                    results = results['cold_load_time']
+                    if len(results) > 10:
+                        results2 = reject_outliers(results)
+                        outliers = [e for e in results2 if e not in results]
+                        if len(outliers):
+                            print('Results raw: %s' % results)
+                            print('Results clean: %s' % results2)
+                            print('outliers: %s' % outliers)
+                            print('Average: %s' % numpy.mean(results))
+                            print('Stdev: %s' % numpy.std(results))
+                            print('Average (clean): %s' % numpy.mean(results2))
+                            print('Stdev (clean): %s' % numpy.std(results2))
+                        else:
+                            print('Results: %s' % results)
+                            print('Average: %s' % numpy.mean(results))
+                            print('Stdev: %s' % numpy.std(results))
+                    else:
+                        print('Results: %s' % results)
+                        print('Average: %s' % numpy.mean(results))
+                        print('Stdev: %s' % numpy.std(results))
 
             except Exception:
                 traceback.print_exc()
