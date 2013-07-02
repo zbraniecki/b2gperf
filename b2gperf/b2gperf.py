@@ -32,7 +32,7 @@ TEST_TYPES = ['startup', 'scrollfps']
 def reject_outliers(data):
     u = numpy.mean(data)
     s = numpy.std(data)
-    m = 1
+    m = 2
     filtered = [e for e in data if (u - m * s < e < u + m * s)]
     return filtered
 
@@ -226,13 +226,15 @@ class B2GPerfRunner(DatazillaPerfPoster):
                                 pass
                             progress.update(success_counter)
                 progress.finish()
+                # for csv
+                # print ', '.join(map(str,results['cold_load_time']))
                 if self.submit_report:
                     self.post_to_datazilla(results, app_name)
                 else:
                     results = results['cold_load_time']
                     if len(results) > 10:
                         results2 = reject_outliers(results)
-                        outliers = [e for e in results2 if e not in results]
+                        outliers = [e for e in results if e not in results2]
                         if len(outliers):
                             print('Results raw: %s' % results)
                             print('Results clean: %s' % results2)
